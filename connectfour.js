@@ -1,105 +1,122 @@
 const width = 7;
 const height = 6;
 
-let currPlayer = 1;
-let board = [];
+let playerRed = "R";
+let playerYellow = "Y";
+let currPlayer = playerRed;
+var gameOver = false;
+let board;
+var currColumns;
 
-function createBoard() {
-    for (let y= 0; y < height; y++) {
-        board.push(Array.from({length: width}));
-    }
+window.onload = function() {
+  setGame();
 }
 
-function htmlBoard() {
-    const board = document.getElementById('table');
+function setGame() {
+  board = [];
+  currColumns = [5, 5, 5, 5, 5, 5, 5];
 
-const top = document.createElement('tr');
-  top.setAttribute('id', 'column-top');
-  top.addEventListener('click', handleClick);
+  for(let h = 0; h < height; h++) {
+    let height = [];
+    for(let w = 0; w < width; w++) {
+      height.push(' ');
 
-  for (let x = 0; x < width; x++) {
-    const headCell = document.createElement('td');
-    headCell.setAttribute('id', x);
-    top.append(headCell);
-  }
-
-  board.append(top);
-  
-  for (let y = 0; y < width; y++) {
-    const row = document.createElement('tr');
-
-    for (let x = 0; x < height; x++) {
-      const cell = document.createElement('td');
-      cell.setAttribute('id', `${y}-${x}`);
-      row.append(cell);
+      let tile = document.createElement("div");
+      tile.id = h.toString() + "-" + w.toString();
+      tile.classList.add("tile");
+      tile.addEventListener("click", setPiece);
+      document.getElementById("board").append(tile);
     }
-
-    board.append(row);
+    board.push(height);
   }
 }
-function findSpotForCol(x) {
-    for (let y = height - 1; y >= 0; y--) {
-      if (!board[y][x]) {
-        return y;
-      }
-    }
-    return null;
-  }
 
-  function placeInTable(y, x) {
-    const piece = document.createElement('div');
-    piece.classList.add('piece');
-    piece.classList.add(`p${currPlayer}`);
-    piece.style.top = -50 * (y + 2);
-  
-    const spot = document.getElementById(`${y}-${x}`);
-    spot.append(piece);
-  }
-
-  function endGame(msg) {
-    alert(msg);
-  }
-
-  function handleClick(evt) {
-    const y = findSpotForCol(x);
-  if (y === null) {
+function setPiece() {
+  if(gameOver) {
     return;
   }
-  board[y][x] = currPlayer;
-  placeInTable(y, x);
-  if (checkForWin()) {
-    return endGame(`Player ${currPlayer} won!`);
+  
+  let coords = this.id.split("-");
+  let h = parseInt(coords[0])
+  let w = parseInt(coords[1]);
+
+  h = currColumns[w];
+  if (h < 0) {
+    return;
   }
-  if (board.every(row => row.every(cell => cell))) {
-    return endGame('Tie!');
+
+  board[h][w] = currPlayer;
+  let tile = document.getElementById(h.toString() + "-" + w.toString());
+  if (currPlayer == playerRed) {
+    tile.classList.add("red-piece");
+    currPlayer = playerYellow;
   }
-  currPlayer = currPlayer === 1 ? 2 : 1;
+  else {
+    tile.classList.add("yellow-piece");
+    currPlayer= playerRed;
+  }
+
+  h -= 1;
+  currColumns[w] = h;
+
+  checkWinner();
 }
 
-function checkForWin() {
-    function _win(cells) {
-      return cells.every(
-        ([y, x]) =>
-          y >= 0 &&
-          y < height &&
-          x >= 0 &&
-          x < width &&
-          board[y][x] === currPlayer
-      );
-    }
+function checkWinner() {
   
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const horiz = [[y, x], [y, x + 1], [y, x + 2], [y, x + 3]];
-        const vert = [[y, x], [y + 1, x], [y + 2, x], [y + 3, x]];
-        const diagDR = [[y, x], [y + 1, x + 1], [y + 2, x + 2], [y + 3, x + 3]];
-        const diagDL = [[y, x], [y + 1, x - 1], [y + 2, x - 2], [y + 3, x - 3]];
-        if (_win(horiz) || _win(vert) || _win(diagDR) || _win(diagDL)) {
-          return true;
+  for(let h = 0; h < height; h++) {
+    for (let w = 0; w < width -3; w++) {
+      if (board[h][w] != ' ') {
+        if (board[h][w] == board[h][w+1] && board[h][w+1] == board[h][w+2] && board[h][w+2] == board[h][w+3]) {
+          setWinner(h, w);
+          return;
+        }
+      }
+    }
+  }
+
+  for(let w = 0; w < width; w++) {
+    for(let h = 0; h < height -3; h++) {
+      if (board[h][w] != ' ') {
+        if (board[h][w] == board[h+1][w] && board[h+1][w] == board[h+2][w] && board[h+2][w] == board[h+3][w]) {
+          setWinner(h, w);
+          return;
+        }
+      }
+    }
+  }
+
+  for(let w = 0; w < width - 3; w++) {
+    for(let h = 0; h < height - 3; h++) {
+      if (board[h][w] != ' ') {
+        if (board[h][w] == board[h+1][w+1] && board[h+1][w+1] == board[h+2][w+2] && board[h+2][w+2] == board[h+3][w+3]) {
+          setWinner(h, w);
+          return;
         }
       }
     }
   }
   
-  createBoard();
-  htmlBoard();
+  for(let w = 3; w < width; w++) {
+    for(let h = 0; h < height - 3; h++) {
+      if (board[h][w] != ' ') {
+        if (board[h][w] == board[h-1][w+1] && board[h-1][w+1] == board[h-2][w+2] && board[h-2][w+2] == board[h-3][w+3]) {
+          setWinner(h, w);
+          return;
+        }
+      }
+    }
+  }
+}
+    
+
+function setWinner(h, w) {
+  let winner = document.getElementById("winner");
+  if(board[h][w] == playerRed) {
+    winner.innerText = "Red Wins";
+   } else {
+      winner.innerText = "Yellow Wins"; 
+    }
+  gameOver = true;
+}
+  
